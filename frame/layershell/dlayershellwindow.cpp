@@ -5,10 +5,11 @@
 #include "dlayershellwindow.h"
 #include "qwaylandlayershellintegration_p.h"
 
+#include <QLoggingCategory>
 #include <QMargins>
+#include <QPlatformSurfaceEvent>
 #include <QScreen>
 #include <QWindow>
-#include <QLoggingCategory>
 
 #include <QtWaylandClient/private/qwaylandwindow_p.h>
 
@@ -258,9 +259,10 @@ DLayerShellWindow::DLayerShellWindow(QWindow* window)
     , d(new DLayerShellWindowPrivate(window))
 {
     s_map.insert(window, this);
+    window->installEventFilter(this);
     window->create();
     if (dynamic_cast<QtWaylandClient::QWaylandWindow *>(window->handle())) {
-        ensureWaylandShellIntegration();
+        installWaylandShellIntegration();
     }
 #ifdef BUILD_WITH_X11
     else if (dynamic_cast<QNativeInterface::Private::QXcbWindow *>(window->handle())) {
@@ -273,13 +275,23 @@ DLayerShellWindow::DLayerShellWindow(QWindow* window)
     }
 }
 
-bool DLayerShellWindow::ensureWaylandShellIntegration()
+bool DLayerShellWindow::eventFilter(QObject *watched, QEvent *event)
 {
-    auto *window = d->parentWindow;
-    if (!window->handle())
-        window->create();
+    if (watched == d->parentWindow && event->type() == QEvent::PlatformSurface) {
+        auto *surfaceEvent = static_cast<QPlatformSurfaceEvent *>(event);
+        if (surfaceEvent->surfaceEventType() == QPlatformSurfaceEvent::SurfaceCreated
+            && dynamic_cast<QtWaylandClient::QWaylandWindow *>(d->parentWindow->handle())) {
+            // Only bind the existing platform window; never create one from this event.
+            if (!installWaylandShellIntegration())
+                qCWarning(layershellwindow) << "Failed to restore layer-shell integration for" << d->scope;
+        }
+    }
+    return QObject::eventFilter(watched, event);
+}
 
-    auto *waylandWindow = dynamic_cast<QtWaylandClient::QWaylandWindow *>(window->handle());
+bool DLayerShellWindow::installWaylandShellIntegration()
+{
+    auto *waylandWindow = dynamic_cast<QtWaylandClient::QWaylandWindow *>(d->parentWindow->handle());
     if (!waylandWindow)
         return false;
 

@@ -42,6 +42,7 @@ WaylandDockHelper::WaylandDockHelper(DockPanel *panel)
 
     connect(m_panel, &DockPanel::positionChanged, this, &WaylandDockHelper::updateRegionWatchPos);
     connect(m_panel, &DockPanel::dockSizeChanged, this, &WaylandDockHelper::updateRegionWatchPos);
+    connect(m_panel, &DockPanel::dockScreenChanged, this, &WaylandDockHelper::updateRegionWatchPos);
     connect(m_panel, &DockPanel::rootObjectChanged, this, &WaylandDockHelper::updateRegionWatchPos);
 
     auto ensureRegionWatch = [this]() {

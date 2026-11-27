@@ -489,8 +489,7 @@ void DockPanel::updateDockScreen()
     auto *waylandScreen = dynamic_cast<QtWaylandClient::QWaylandScreen *>(primary->handle());
     if (!waylandScreen || !waylandScreen->output())
         return;
-    if (DS_NAMESPACE::DLayerShellWindow::get(win)->ensureWaylandShellIntegration())
-        win->show();
+    win->show();
 }
 
 bool DockPanel::showInPrimary() const

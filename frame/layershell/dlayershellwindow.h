@@ -147,8 +147,6 @@ public:
     void setCloseOnDismissed(bool close);
     bool closeOnDismissed() const;
 
-    bool ensureWaylandShellIntegration();
-
     /**
      * Gets the LayerShell Window for a given Qt Window
      * Ownership is not transferred
@@ -168,6 +166,8 @@ Q_SIGNALS:
     void inputRegionChanged();
 
 private:
+    bool eventFilter(QObject *watched, QEvent *event) override;
+    bool installWaylandShellIntegration();
     DLayerShellWindow(QWindow* window);
     QScopedPointer<DLayerShellWindowPrivate> d;
 };
